@@ -144,14 +144,24 @@ Jieba_LookupType(JiebaCtx* ctx, const string& str) {
 	MixSegment* x = (MixSegment*) ctx->mix_seg_;
 
 	string typ = x->LookupTag(str);
+	if (typ.empty()) {
+		typ = "x";
+	}
 
-	unordered_map<string, int>::const_iterator got = ctx->lex_id_.find(typ);
+	auto got = ctx->lex_id_.find(typ);
+	if (got == ctx->lex_id_.end()) {
+		// 重要：在 PostgreSQL text search parser 中，type = 0 代表「解析結束」。
+		// 如果在這裡回傳 0，parser 會立刻停止解析，並且不會產生任何 token。
+		got = ctx->lex_id_.find("x");
+	}
 
-	if (got == ctx->lex_id_.end())
+	if (got == ctx->lex_id_.end()) {
 		return 0;
+	}
 
 	return got->second;
 }
+
 
 ParStat *
 ParStat_New()
